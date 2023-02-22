@@ -6,6 +6,7 @@ from selenium.webdriver.common.by import By
 import time
 import getpass
 from datetime import datetime
+import os
 
 '''
 作者: CY
@@ -20,18 +21,29 @@ pyinstaller -F -c change_password_240.py
 
 
 try:
-    user_name = input('Username: ')
-    base_password = input('Password: ')
+    user_name = input('帳號: ')
+    if user_name == '':
+        print('帳號不能略過，請重新輸入')
+        exit()
+    base_password = input('密碼: ')
+    if user_name == '':
+        print('密碼不能略過，請重新輸入')
+        exit()
     # base_password = getpass.getpass("Password: ")
     # password = 'Abcd1234_0'
 
-    loop_num_str = input('loop number: ')
-    if loop_num_str.isdigit():
-        loop_num = int(loop_num_str)
+    loop_num_str = input('請輸入想要改密碼的次數 (default 240): ')
+    if loop_num_str == '':
+        loop_num = 240      # default 240
     else:
-        print('please input integer')
-        exit()
-    #loop_num = 240
+        if loop_num_str.isdigit():
+            loop_num = int(loop_num_str)
+        else:
+            print('please input integer')
+            exit()
+
+    print('正在啟動 chrome... 請稍後')
+    access_sucess = 0
     cou = 0
     now_time = datetime.now()
     pass_word_log_file = 'pass_word_log_' + now_time.strftime("%Y%m%d_%H_%M_%S") + '.txt'
@@ -46,12 +58,67 @@ try:
     url ='https://damc.realtek.com/#/SignIn'
     driver.get(url)
 
-    time.sleep(3)
+    #time.sleep(3)
+    
+    access_sucess = 0
+    for a in range(20):
+        try:
+            driver.find_element(By.XPATH, '//input[contains(@adm-input-group-input-adapter, "ctrl")]').send_keys(user_name)
+            access_sucess = 1
+        except:
+            print('無法輸入帳號')
+        if access_sucess == 1:
+            break
+        else:
+            time.sleep(1)
+    if access_sucess == 0:
+        print('一直沒辦法輸入帳號')
+        exit()
+        
+        
+    access_sucess = 0
+    for a in range(20):
+        try:
+            driver.find_element(By.XPATH, '//input[@name="password"]').send_keys(base_password)
+            access_sucess = 1
+        except:
+            print('無法輸入密碼')
+        if access_sucess == 1:
+            break
+        else:
+            time.sleep(1)
+    if access_sucess == 0:
+        print('一直沒辦法輸入密碼')
+        exit()
 
-    driver.find_element(By.XPATH, '//input[contains(@adm-input-group-input-adapter, "ctrl")]').send_keys(user_name)
-    driver.find_element(By.XPATH, '//input[@name="password"]').send_keys(base_password)
+    
+    access_sucess = 0
+    for a in range(20):
+        try:
+            self_service_detect = driver.find_element(By.XPATH, '//span[contains(@ng-show, "ctrl") and contains(@adm-bind, "configurationDisplayName")]')
+            if self_service_detect.text == 'Self-Service':
+                access_sucess = 1
+                print('找到了')
+            else:
+                print('還沒找到')
+        except:
+            print('cannot access Self-Service')
+        if access_sucess == 1:
+            break
+        else:
+            time.sleep(1)
+    if access_sucess == 0:
+        print('一直沒找到 Self-Service')
+        exit()
+        
+    time.sleep(1)
+    
+    driver.find_element(By.XPATH, '//button[@type="submit" and @aria-label="Sign In"]').click()
+    
+    time.sleep(1)
+        
 
-    c = input('please input any key to continue\n')
+    c = input('請先輸入完手機驗證碼後，再按任意鍵繼續...\n')
     f = open(pass_word_log_file, 'w')
     # datas = driver.find_elements(By.CLASS_NAME, 'home-card__buttons')
 
@@ -67,7 +134,7 @@ try:
                         item.click()
                         click_sucess = 1
             except:
-                click_sucess = 0
+                #click_sucess = 0
                 f.write('cannot press CHANGE PASSWORD\n')
                 f.flush()
                 print('cannot press CHANGE PASSWORD')
@@ -175,5 +242,6 @@ try:
     f.close()
     c = input('FINISHED! please input any key to continue\n')
     driver.close()
-except:
+except Exception as e:
+    print(e)
     os.system("pause")
