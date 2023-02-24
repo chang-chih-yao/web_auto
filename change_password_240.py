@@ -26,7 +26,7 @@ try:
         print('帳號不能略過，請重新輸入')
         exit()
     base_password = input('密碼: ')
-    if user_name == '':
+    if base_password == '':
         print('密碼不能略過，請重新輸入')
         exit()
     # base_password = getpass.getpass("Password: ")
